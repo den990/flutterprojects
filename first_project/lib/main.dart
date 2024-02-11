@@ -124,7 +124,10 @@
 //   }
 // }
 
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
 
 void main() {
   runApp(MyApp());
@@ -214,7 +217,8 @@ class _ProfilePageState extends State<ProfilePage> {
       );
     } else {
       // Если не вошли, показать страницу входа
-      return GuestPage(onLogin: _handleLogin, onRegistration: _handleRegistration);
+      return GuestPage(
+          onLogin: _handleLogin, onRegistration: _handleRegistration);
     }
   }
 
@@ -242,17 +246,26 @@ class GuestPage extends StatelessWidget {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-        ElevatedButton(
-            onPressed: () {
-              Navigator.push(context, MaterialPageRoute(builder: (context) => LoginPage(onLogin: onLogin)));
-            },
-            child: Text('Вход')),
-        ElevatedButton(
-            onPressed: () {
-              Navigator.push(context, MaterialPageRoute(builder: (context) => RegistrationPage(onRegistration: onRegistration)));
-            },
-            child: Text('Зарегистрироваться')),
-      ],),);
+          ElevatedButton(
+              onPressed: () {
+                Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                        builder: (context) => LoginPage(onLogin: onLogin)));
+              },
+              child: Text('Вход')),
+          ElevatedButton(
+              onPressed: () {
+                Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                        builder: (context) =>
+                            RegistrationPage(onRegistration: onRegistration)));
+              },
+              child: Text('Зарегистрироваться')),
+        ],
+      ),
+    );
   }
 }
 
@@ -281,10 +294,19 @@ class LoginPage extends StatelessWidget {
   }
 }
 
-class RegistrationPage extends StatelessWidget {
+class RegistrationPage extends StatefulWidget {
   final VoidCallback onRegistration;
 
   RegistrationPage({required this.onRegistration});
+
+  @override
+  _RegistrationPageState createState() => _RegistrationPageState();
+}
+
+class _RegistrationPageState extends State<RegistrationPage> {
+  final TextEditingController _usernameController = TextEditingController();
+  final TextEditingController _passwordController = TextEditingController();
+  final TextEditingController _emailController = TextEditingController();
 
   @override
   Widget build(BuildContext context) {
@@ -292,17 +314,72 @@ class RegistrationPage extends StatelessWidget {
       appBar: AppBar(
         title: Text('Регистрация'),
       ),
-      body: Center(
-        child: ElevatedButton(
-          onPressed: () {
-            // Ваш код для регистрации пользователя
-            // По завершении регистрации вызывайте onRegistration
-            onRegistration();
-          },
-          child: Text('Зарегистрироваться'),
+      body: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Form(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              TextFormField(
+                controller: _emailController,
+                decoration: InputDecoration(labelText: 'Email'),
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Введите email';
+                  } else if (!RegExp(r'\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b').hasMatch(value)) {
+                    return 'Введите корректный email';
+                  }
+                  return null;
+                },
+              ),
+              TextFormField(
+                controller: _usernameController,
+                decoration: InputDecoration(labelText: 'Имя пользователя'),
+              ),
+              TextFormField(
+                controller: _passwordController,
+                decoration: InputDecoration(labelText: 'Пароль'),
+                obscureText: true,
+              ),
+              SizedBox(height: 20),
+              ElevatedButton(
+                onPressed: () {
+                  _registerUser();
+                },
+                child: Text('Зарегистрироваться'),
+              ),
+            ],
+          ),
         ),
       ),
     );
   }
-}
 
+  Future<void> _registerUser() async {
+    final String username = _usernameController.text;
+    final String password = _passwordController.text;
+    final String email = _emailController.text;
+
+    final Uri registrationUrl = Uri.parse(
+        'http://192.168.31.157:8081/api/register');
+
+    try {
+      final response = await http.post(
+        registrationUrl,
+        body: jsonEncode({'username': username, 'password': password, 'email': email}),
+      );
+
+      if (response.statusCode == 200) {
+        // Успешная регистрация, выполните действия, которые вам нужны
+        print('Регистрация успешна!');
+        // Вызываем onRegistration, переданный извне
+        widget.onRegistration();
+      } else {
+        // Ошибка при регистрации, обработайте соответственно
+        print('Ошибка при регистрации: ${response.statusCode}');
+      }
+    } catch (error) {
+      print('Ошибка при выполнении запроса: $error');
+    }
+  }
+}
