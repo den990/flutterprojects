@@ -22,7 +22,12 @@ class RegisterUserForm extends Model
 
     public function init()
     {
-        $this->load(Yii::$app->request->post(), '');
+        $request = Yii::$app->request;
+        $data = json_decode($request->getRawBody(), true);
+
+        $this->username = $data['username'];
+        $this->password = $data['password'];
+        $this->email = $data['email'];
     }
 
     public function registration()
@@ -38,7 +43,7 @@ class RegisterUserForm extends Model
         }
         else
         {
-            return ['message' => 'Произошла ошибка при сохранении пользователя'];
+            return ['message' => 'Произошла ошибка при сохранении пользователя', 'errors' => $user->errors];
         }
     }
 }

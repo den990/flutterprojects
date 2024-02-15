@@ -360,13 +360,20 @@ class _RegistrationPageState extends State<RegistrationPage> {
     final String password = _passwordController.text;
     final String email = _emailController.text;
 
-    final Uri registrationUrl = Uri.parse(
-        'http://192.168.31.157:8081/api/register');
+    final Uri registrationUrl = Uri.parse('https://addd-188-187-199-180.ngrok-free.app/api/register');
+
 
     try {
       final response = await http.post(
         registrationUrl,
-        body: jsonEncode({'username': username, 'password': password, 'email': email}),
+        headers: <String, String>{
+        'Content-Type': 'application/json; charset=UTF-8',
+        },
+        body: jsonEncode({
+          'username': username,
+          'password': password,
+          'email': email,
+        }),
       );
 
       if (response.statusCode == 200) {
@@ -376,7 +383,7 @@ class _RegistrationPageState extends State<RegistrationPage> {
         widget.onRegistration();
       } else {
         // Ошибка при регистрации, обработайте соответственно
-        print('Ошибка при регистрации: ${response.statusCode}');
+        print('Ошибка при регистрации: ${response.statusCode}, ${response.body}');
       }
     } catch (error) {
       print('Ошибка при выполнении запроса: $error');
