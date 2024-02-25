@@ -15,14 +15,14 @@ class RegisterUserForm extends Model
     public function rules()
     {
         return [
-            [['username','password'], 'required'],
+            [['username','password', 'email'], 'required'],
             [['email'], 'email'],
         ];
     }
 
     public function init()
     {
-        $request = Yii::$app->request;
+        $request = YII::$app->request;
         $data = json_decode($request->getRawBody(), true);
 
         $this->username = $data['username'];
@@ -32,18 +32,25 @@ class RegisterUserForm extends Model
 
     public function registration()
     {
-        $user = new User();
-        $user->username = $this->username;
-        $user->email = $this->email;
-        $user->setPassword($this->password);
-        $user->generateAuthKey();
-        $user->status = 10;
-        if ($user->save()) {
+        if ($this->password && $this->username && $this->email)
+        {
+            $user = new User();
+            $user->username = $this->username;
+            $user->email = $this->email;
+            $user->setPassword($this->password);
+            $user->generateAuthKey();
+            $user->status = 10;
+            if ($user->save())
+            {
                 return ['message' => 'Пользователь зарегестрирован'];
+            } else
+            {
+                return ['message' => 'Произошла ошибка при сохранении пользователя', 'errors' => $user->errors];
+            }
         }
         else
         {
-            return ['message' => 'Произошла ошибка при сохранении пользователя', 'errors' => $user->errors];
+            return ['message' => 'Заполните все данные'];
         }
     }
 }

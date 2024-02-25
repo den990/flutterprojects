@@ -269,10 +269,18 @@ class GuestPage extends StatelessWidget {
   }
 }
 
-class LoginPage extends StatelessWidget {
+class LoginPage extends StatefulWidget {
   final VoidCallback onLogin;
 
   LoginPage({required this.onLogin});
+
+  @override
+  _LoginPageState createState() => _LoginPageState();
+}
+
+class _LoginPageState extends State<LoginPage> {
+  final TextEditingController _usernameController = TextEditingController();
+  final TextEditingController _passwordController = TextEditingController();
 
   @override
   Widget build(BuildContext context) {
@@ -280,17 +288,65 @@ class LoginPage extends StatelessWidget {
       appBar: AppBar(
         title: Text('Вход'),
       ),
-      body: Center(
-        child: ElevatedButton(
-          onPressed: () {
-            // Ваш код для аутентификации пользователя
-            // По завершении аутентификации вызывайте onLogin
-            onLogin();
-          },
-          child: Text('Вход'),
+      body: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Form(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              TextFormField(
+                controller: _usernameController,
+                decoration: const InputDecoration(labelText: 'Логин(username)'),
+              ),
+              TextFormField(
+                controller: _passwordController,
+                decoration: const InputDecoration(labelText: 'Пароль'),
+                obscureText: true,
+              ),
+              const SizedBox(height: 20),
+              ElevatedButton(
+                onPressed: () {
+                  _loginUser();
+                },
+                child: const Text('Войти'),
+              ),
+            ],
+          ),
         ),
       ),
     );
+  }
+
+  Future<void> _loginUser() async {
+    final String username = _usernameController.text;
+    final String password = _passwordController.text;
+
+    final Uri registrationUrl = Uri.parse('https://f818-188-187-199-180.ngrok-free.app/api/login');//TODO сделать api на yii
+
+
+    try {
+      final response = await http.post(
+        registrationUrl,
+        headers: <String, String>{
+          'Content-Type': 'application/json; charset=UTF-8',
+        },
+        body: jsonEncode({
+          'username': username,
+          'password': password,
+        }),
+      );
+
+      if (response.statusCode == 200) {
+        final responseData = json.decode(response.body);
+        print(responseData['isLogin']);
+        print(responseData['message']);
+        widget.onLogin();
+      } else {
+        print('Ошибка при входе: ${response.statusCode}, ${response.body}');
+      }
+    } catch (error) {
+      print('Ошибка при выполнении запроса: $error');
+    }
   }
 }
 
@@ -312,7 +368,7 @@ class _RegistrationPageState extends State<RegistrationPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Регистрация'),
+        title: const Text('Регистрация'),
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
@@ -322,7 +378,7 @@ class _RegistrationPageState extends State<RegistrationPage> {
             children: [
               TextFormField(
                 controller: _emailController,
-                decoration: InputDecoration(labelText: 'Email'),
+                decoration: const InputDecoration(labelText: 'Email'),
                 validator: (value) {
                   if (value == null || value.isEmpty) {
                     return 'Введите email';
@@ -334,14 +390,14 @@ class _RegistrationPageState extends State<RegistrationPage> {
               ),
               TextFormField(
                 controller: _usernameController,
-                decoration: InputDecoration(labelText: 'Имя пользователя'),
+                decoration: const InputDecoration(labelText: 'Имя пользователя'),
               ),
               TextFormField(
                 controller: _passwordController,
-                decoration: InputDecoration(labelText: 'Пароль'),
+                decoration: const InputDecoration(labelText: 'Пароль'),
                 obscureText: true,
               ),
-              SizedBox(height: 20),
+              const SizedBox(height: 20),
               ElevatedButton(
                 onPressed: () {
                   _registerUser();
@@ -360,7 +416,7 @@ class _RegistrationPageState extends State<RegistrationPage> {
     final String password = _passwordController.text;
     final String email = _emailController.text;
 
-    final Uri registrationUrl = Uri.parse('https://addd-188-187-199-180.ngrok-free.app/api/register');
+    final Uri registrationUrl = Uri.parse('https://f818-188-187-199-180.ngrok-free.app/api/register');
 
 
     try {
@@ -377,12 +433,9 @@ class _RegistrationPageState extends State<RegistrationPage> {
       );
 
       if (response.statusCode == 200) {
-        // Успешная регистрация, выполните действия, которые вам нужны
         print('Регистрация успешна!');
-        // Вызываем onRegistration, переданный извне
         widget.onRegistration();
       } else {
-        // Ошибка при регистрации, обработайте соответственно
         print('Ошибка при регистрации: ${response.statusCode}, ${response.body}');
       }
     } catch (error) {

@@ -12,6 +12,7 @@ return [
     'controllerNamespace' => 'backend\controllers',
     'controllerMap' => [
             'reg' => 'backend\controllers\RegisterController',
+            'logging' => 'backend\controllers\LoginController'
     ],
     'bootstrap' => ['log'],
     'modules' => [],
@@ -52,7 +53,8 @@ return [
             'enablePrettyUrl' => true,
             'showScriptName' => false,
             'rules' => [
-            'POST api/register' => 'reg/registration',
+                'POST api/register' => 'reg/registration',
+                'POST api/login' => 'logging/login'
             ],
         ],
 
