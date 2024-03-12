@@ -128,6 +128,8 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'package:first_project/const.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
   runApp(MyApp());
@@ -204,17 +206,32 @@ class _ProfilePageState extends State<ProfilePage> {
   bool _isLoggedIn = false;
 
   @override
+  void initState() {
+    super.initState();
+    _checkLoginStatus();
+  }
+
+  Future<void> _checkLoginStatus() async {
+    final SharedPreferences prefs = await SharedPreferences.getInstance();
+    final bool isLoggedIn = prefs.getBool('isLoggedIn') ?? false;
+    setState(() {
+      _isLoggedIn = isLoggedIn;
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
     if (_isLoggedIn) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Text('Профиль'),
-            // отображения данных из базы данных
-          ],
-        ),
-      );
+      return Center(child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          const Text(
+            'Вы вошли',
+            style: TextStyle(fontSize: 24),
+          ),
+          ElevatedButton(onPressed: () {_handleLogout();}, child: Text('Выйти'))
+        ],
+      ));
     } else {
       // Если не вошли, показать страницу входа
       return GuestPage(
@@ -222,15 +239,27 @@ class _ProfilePageState extends State<ProfilePage> {
     }
   }
 
-  void _handleLogin() {
+  void _handleLogin() async {
+    final SharedPreferences prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('isLoggedIn', true);
     setState(() {
       _isLoggedIn = true;
     });
   }
 
   void _handleRegistration() {
-    // Ваш код для обработки регистрации
-    // Этот метод будет вызываться из RegistrationPage после успешной регистрации
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(builder: (context) => LoginPage(onLogin: _handleLogin)),
+    );
+  }
+
+  void _handleLogout() async {
+    final SharedPreferences prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('isLoggedIn', false);
+    setState(() {
+      _isLoggedIn = false;
+    });
   }
 }
 
@@ -320,8 +349,8 @@ class _LoginPageState extends State<LoginPage> {
   Future<void> _loginUser() async {
     final String username = _usernameController.text;
     final String password = _passwordController.text;
+    final Uri registrationUrl = Uri.parse(urlLogin);
 
-    final Uri registrationUrl = Uri.parse('https://f818-188-187-199-180.ngrok-free.app/api/login');//TODO сделать api на yii
 
 
     try {
@@ -341,6 +370,7 @@ class _LoginPageState extends State<LoginPage> {
         print(responseData['isLogin']);
         print(responseData['message']);
         widget.onLogin();
+        Navigator.of(context).pop();
       } else {
         print('Ошибка при входе: ${response.statusCode}, ${response.body}');
       }
@@ -416,7 +446,7 @@ class _RegistrationPageState extends State<RegistrationPage> {
     final String password = _passwordController.text;
     final String email = _emailController.text;
 
-    final Uri registrationUrl = Uri.parse('https://f818-188-187-199-180.ngrok-free.app/api/register');
+    final Uri registrationUrl = Uri.parse(urlRegistration);
 
 
     try {
