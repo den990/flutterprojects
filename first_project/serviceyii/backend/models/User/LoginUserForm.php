@@ -36,7 +36,14 @@ class LoginUserForm extends Model
             {
                 if (Yii::$app->security->validatePassword($this->password, $user->password_hash))
                 {
+                    $token = $user->verification_token;
+                    if (!$user->verification_token)
+                    {
+                        $token = $user->verification_token = Yii::$app->security->generateRandomString();
+                        $user->save();
+                    }
                     return ['message' => 'Вы успешно авторизовались',
+                            'accessToken' => $token,
                             'isLogin' => true];
                 }
                 else

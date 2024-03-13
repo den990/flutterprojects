@@ -131,6 +131,7 @@ import 'package:http/http.dart' as http;
 import 'package:first_project/const.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+
 void main() {
   runApp(MyApp());
 }
@@ -204,6 +205,8 @@ class ProfilePage extends StatefulWidget {
 
 class _ProfilePageState extends State<ProfilePage> {
   bool _isLoggedIn = false;
+  String _username = '';
+  String _email = '';
 
   @override
   void initState() {
@@ -219,15 +222,50 @@ class _ProfilePageState extends State<ProfilePage> {
     });
   }
 
+  Future<void> _fetchUserData() async {
+    final SharedPreferences prefs = await SharedPreferences.getInstance();
+    final String aceessToken = prefs.getString('accessToken') ?? '';
+    final Uri userUri = Uri.parse(urlUser);
+
+    try {
+      final response = await http.post(
+        userUri,
+        headers: <String, String>{
+          'Content-Type': 'application/json; charset=UTF-8',
+        },
+        body: jsonEncode({
+          'accessToken': aceessToken,
+        }),
+      );
+      if (response.statusCode == 200)
+      {
+        final responseData = json.decode(response.body);
+        if (responseData['success'] == true) {
+          setState(() {
+            _username = responseData['username'];
+            _email = responseData['email'];
+          });
+        }
+      }
+    }
+    catch (error) {
+      print('Ошибка при выполнении запроса: $error');
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     if (_isLoggedIn) {
       return Center(child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          const Text(
-            'Вы вошли',
-            style: TextStyle(fontSize: 24),
+          Text(
+            'Вы вошли как $_username ',
+            style: const TextStyle(fontSize: 24),
+          ),
+          Text(
+            'Email: $_email',
+            style: const TextStyle(fontSize: 24),
           ),
           ElevatedButton(onPressed: () {_handleLogout();}, child: Text('Выйти'))
         ],
@@ -245,6 +283,7 @@ class _ProfilePageState extends State<ProfilePage> {
     setState(() {
       _isLoggedIn = true;
     });
+    _fetchUserData();
   }
 
   void _handleRegistration() {
@@ -257,6 +296,7 @@ class _ProfilePageState extends State<ProfilePage> {
   void _handleLogout() async {
     final SharedPreferences prefs = await SharedPreferences.getInstance();
     await prefs.setBool('isLoggedIn', false);
+    await prefs.setString('accessToken', '');
     setState(() {
       _isLoggedIn = false;
     });
@@ -367,10 +407,10 @@ class _LoginPageState extends State<LoginPage> {
 
       if (response.statusCode == 200) {
         final responseData = json.decode(response.body);
-        print(responseData['isLogin']);
-        print(responseData['message']);
+        final SharedPreferences prefs = await SharedPreferences.getInstance();
+        prefs.setString('accessToken', responseData['accessToken']); // сохраняем acessToken
         widget.onLogin();
-        Navigator.of(context).pop();
+        Navigator.of(context).pop(); // не пред страницу
       } else {
         print('Ошибка при входе: ${response.statusCode}, ${response.body}');
       }

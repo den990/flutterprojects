@@ -12,7 +12,8 @@ return [
     'controllerNamespace' => 'backend\controllers',
     'controllerMap' => [
             'reg' => 'backend\controllers\RegisterController',
-            'logging' => 'backend\controllers\LoginController'
+            'logging' => 'backend\controllers\LoginController',
+            'user' => 'backend\controllers\UserController',
     ],
     'bootstrap' => ['log'],
     'modules' => [],
@@ -54,7 +55,8 @@ return [
             'showScriptName' => false,
             'rules' => [
                 'POST api/register' => 'reg/registration',
-                'POST api/login' => 'logging/login'
+                'POST api/login' => 'logging/login',
+                'POST api/user' => 'user/get-info',
             ],
         ],
 
